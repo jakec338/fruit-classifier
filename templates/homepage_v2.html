@@ -1,0 +1,92 @@
+
+<div>
+        <p>Upload an image</p>
+        <input type='file' accept='image/*' onchange='openFile(event)'><br>
+</div>
+
+<!-- CSS -->
+<style>
+#my_camera{
+ width: 320px;
+ height: 240px;
+ border: 1px solid black;
+}
+</style>
+
+
+<div id="my_camera"></div>
+<p>Take picture with your webcam</p>
+<input type=button value="Take Snapshot" onClick="take_snapshot()">
+ 
+ 
+<!-- Webcam.min.js -->
+
+<script type="text/javascript" src="{{ url_for('static', path='/js/webcamjs/webcam.min.js') }}"></script>
+
+<!-- Configure a few settings and attach camera -->
+<script language="JavaScript">
+ Webcam.set({
+  width: 320,
+  height: 240,
+  image_format: 'jpeg',
+  jpeg_quality: 90
+ });
+ Webcam.attach( '#my_camera' );
+
+    
+async function postData(url = '', data = {}) {
+  // Default options are marked with *
+  const response = await fetch(url, {
+    method: 'POST', // *GET, POST, PUT, DELETE, etc.
+    mode: 'cors', // no-cors, *cors, same-origin
+    cache: 'no-cache', // *default, no-cache, reload, force-cache, only-if-cached
+    credentials: 'same-origin', // include, *same-origin, omit
+    headers: {
+      //'Content-Type': 'application/json'
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    redirect: 'follow', // manual, *follow, error
+    referrer: 'no-referrer', // no-referrer, *client
+    body: data // body data type must match "Content-Type" header
+  });
+    console.log(response);
+  return await response; // parses JSON response into native JavaScript objects
+}
+ 
+    
+<!-- Code to handle taking the snapshot and displaying it locally -->
+async function take_snapshot() {
+ 
+ // take snapshot and get image data
+ Webcam.snap(async function(data_uri) {
+   await postData('/return_image', data_uri).then(async function(res) {
+       var result = await res.json();
+       document.getElementById("results").innerHTML = "<h1>"+result.classification+"</h1>"
+   });
+   // display results in page
+  //document.getElementById('results').innerHTML += 
+  //'<img src="'+data_uri+'"/>';
+  } );
+}
+
+var openFile = function(file) {
+    var input = file.target;
+
+    var reader = new FileReader();
+    reader.onload = function(){
+      var dataURL = reader.result;
+      postData('/return_image', dataURL).then(async function(res) {
+           var result = await res.json();
+           document.getElementById("results").innerHTML = "<h1>"+result.classification+"</h1>"
+      });
+        
+      var output = document.getElementById('output');
+      output.style.display = "block"
+      output.src = dataURL;
+    };
+    reader.readAsDataURL(input.files[0]);
+  };
+
+</script>
+<img id='output' style="height:100px; width:100px;">
+<div id="results" ></div>
